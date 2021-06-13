@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { TextStyle, View, ViewStyle, Alert } from "react-native"
+import { TextStyle, View, ViewStyle, Alert, Text, FlatList } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { observer } from "mobx-react-lite"
 import { Button, Header, Screen, TextField, Wallpaper } from "../../components"
@@ -13,6 +13,16 @@ import TosadorModel from "../../models/tosador-model"
 
 const FULL: ViewStyle = {
   flex: 1,
+}
+const LIST_TEXT: TextStyle = {
+  marginLeft: 10,
+}
+const FLAT_LIST: ViewStyle = {
+  paddingHorizontal: spacing[4],
+}
+const BUTTON_SELECT: ViewStyle = {
+  backgroundColor: "green",
+  alignSelf: "stretch",
 }
 const CONTAINER: ViewStyle = {
   backgroundColor: color.transparent,
@@ -64,27 +74,19 @@ export const TosadorFormCreateScreen = observer(function TosadorFormCreateScreen
   const tosadorService = new TosadorService()
   const petService = new PetService()
 
-  const [radioButtonsData, setRadioButtonsData] = useState([]);  
+ // const [radioButtonsData, setRadioButtonsData] = useState([]);  
   const [especialidadeSelecionada, setSelecionarEspecialidade] = useState("");
   const [nomeSelecionado, setSelecionarNome] = useState("");
   const [statusSelecionado, setSelecionarStatus] = useState("");
   const [imagemSelecionada, setImagemSelecionada] = useState("");
   const [dataAtendimento, setDataAtendimentoSelecionada] = useState("")
-  const [petRadioGroup, setSelecionarPetId] = useState(radioButtonsData);
+  const [petId, setPetId] = useState("");
+  const [pets, setPets] = useState([]);
+  //const [petRadioGroup, setSelecionarPetId] = useState(radioButtonsData);
 
   async function loadPets() {
-    const pets = await petService.getPets()
-    let radioButtonsData = []
-    pets.forEach((element, index) => {
-      radioButtonsData[index] = {
-        id: `${element.id}`,
-        label: element.nome,
-        value: `${element.id}`,
-        color: "#FFF",
-        labelStyle: {color: "white"}
-      }
-    });
-    setRadioButtonsData(radioButtonsData)
+    setPets(await petService.getPets())
+   
   }
 
   useEffect(() => {
@@ -92,23 +94,29 @@ export const TosadorFormCreateScreen = observer(function TosadorFormCreateScreen
   }, [])
 
   async function adicionarNovoTosador() {
-    const petSelecionado = petRadioGroup.find((item) => {
-      return (item.selected)
-    })
-    if (petSelecionado) {
-      const tosador = new TosadorModel({
-        nome: nomeSelecionado,
-        especialidade: especialidadeSelecionada,
-        status: statusSelecionado,
-        dataAtendimento,
-        imagem: imagemSelecionada,
-        petId: petSelecionado.value
-      })
+    
+    if (petId) {
+      try {
+      const tosador = new TosadorModel()
+        tosador.nome = nomeSelecionado,
+        tosador.especialidade = especialidadeSelecionada,
+        tosador.status = statusSelecionado,
+        tosador.dataAtendimento = dataAtendimento,
+        tosador.imagem = imagemSelecionada,
+        tosador.petId = petId
+      
       
       await tosadorService.saveTosador(tosador)
 
       navigation.navigate("home")
       navigation.navigate("tosadorList")
+    } catch(e) {
+      console.log(e)
+      Alert.alert(
+        "Atenção",
+        "Ocorreu um erro ao tentar cadastrar o Tosador!"
+      )
+    }
     }else {
       Alert.alert(
         "Atenção",
@@ -168,10 +176,32 @@ export const TosadorFormCreateScreen = observer(function TosadorFormCreateScreen
             date={dataAtendimento}
             onDateChange={setDataAtendimentoSelecionada}></DatePicker>
 
-            <RadioGroup
-            radioButtons={petRadioGroup} 
-            onPress={setSelecionarPetId} 
-              />
+            </View>
+                  <FlatList
+                    contentContainerStyle={FLAT_LIST}
+                    data={pets}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                      <View style={LIST_CONTAINER}>
+                          <Text style={LIST_TEXT}>
+                          {item.nome} 
+                          </Text>
+                        <Button
+                          style={BUTTON_SELECT}
+                          disabled={petId===item.id}
+                          onPress={() => {
+                            setPetId(item.id)
+                            
+                          }}
+                          text="Selecionar"
+                          >
+                            
+                          </Button>
+                      
+                      </View>
+                    )}
+                  />
+                  <View>  
 
           <Button
             style={BUTTON_ADD}

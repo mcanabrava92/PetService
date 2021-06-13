@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { TextStyle, View, ViewStyle, Alert } from "react-native"
+import { TextStyle, View, ViewStyle, Alert, Text, FlatList } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { observer } from "mobx-react-lite"
 import { Button, Header, Screen, TextField, Wallpaper } from "../../components"
@@ -13,6 +13,16 @@ import PetService from "../../services/pet-service"
 
 const FULL: ViewStyle = {
   flex: 1,
+}
+const LIST_TEXT: TextStyle = {
+  marginLeft: 10,
+}
+const FLAT_LIST: ViewStyle = {
+  paddingHorizontal: spacing[4],
+}
+const BUTTON_SELECT: ViewStyle = {
+  backgroundColor: "green",
+  alignSelf: "stretch",
 }
 const CONTAINER: ViewStyle = {
   backgroundColor: color.transparent,
@@ -64,46 +74,36 @@ export const VeterinarioFormCreateScreen = observer(function VeterinarioFormCrea
   const veterinarioService = new VeterinarioService()
   const petService = new PetService()
   
-  const [radioButtonsData, setRadioButtonsData] = useState([]);  
+  //const [radioButtonsData, setRadioButtonsData] = useState([]);  
   const [especialidadeSelecionada, setSelecionarEspecialidade] = useState("");
   const [nomeSelecionado, setSelecionarNome] = useState("");
   const [statusSelecionado, setSelecionarStatus] = useState("");
   const [imagemSelecionada, setImagemSelecionada] = useState("");
   const [dataAtendimento, setDataAtendimentoSelecionada] = useState("")
-  const [petRadioGroup, setSelecionarPetId] = useState(radioButtonsData);
+  const [petId, setPetId] = useState("");
+  const [pets, setPets] = useState([]);
+  //const [petRadioGroup, setSelecionarPetId] = useState(radioButtonsData);
 
   async function loadPets() {
-    const pets = await petService.getPets()
-    let radioButtonsData = []
-    pets.forEach((element, index) => {
-      radioButtonsData[index] = {
-        id: `${element.id}`,
-        label: element.nome,
-        value: `${element.id}`,
-        color: "#FFF",
-        labelStyle: {color: "white"}
-      }
-    });
-    setRadioButtonsData(radioButtonsData)
+    setPets(await petService.getPets())
+   
   }
 
   useEffect(() => {
     loadPets()
   }, [])
-
+  
   async function adicionarNovoVeterinario() {
-    const petSelecionado = petRadioGroup.find((item) => {
-      return (item.selected)
-    })
-    if (petSelecionado) {
+    
+    if (petId) {
       try {
         const veterinario = new VeterinarioModel()
-        veterinario.nome = nomeSelecionado
-        veterinario.especialidade = especialidadeSelecionada
-        veterinario.status = statusSelecionado
-        veterinario.dataAtendimento = dataAtendimento
-        veterinario.imagem = imagemSelecionada
-        veterinario.petId = petSelecionado.value
+        veterinario.nome = nomeSelecionado,
+        veterinario.especialidade = especialidadeSelecionada,
+        veterinario.status = statusSelecionado,
+        veterinario.dataAtendimento = dataAtendimento,
+        veterinario.imagem = imagemSelecionada,
+        veterinario.petId
 
         await veterinarioService.saveVeterinario(veterinario)
         
@@ -130,7 +130,7 @@ export const VeterinarioFormCreateScreen = observer(function VeterinarioFormCrea
   return (
     <View testID="VeterinarioListScreen" style={FULL}>
       <Wallpaper />
-      <Screen style={CONTAINER} preset="fixed" backgroundColor={color.transparent}>
+      <Screen style={CONTAINER} preset="scroll" backgroundColor={color.transparent}>
         <Header
           headerText="Adicionar Veterinário"
           leftIcon="back"
@@ -175,10 +175,32 @@ export const VeterinarioFormCreateScreen = observer(function VeterinarioFormCrea
             date={dataAtendimento}
             onDateChange={setDataAtendimentoSelecionada}></DatePicker>
 
-            <RadioGroup
-            radioButtons={petRadioGroup} 
-            onPress={setSelecionarPetId} 
-              />
+          </View>
+          <FlatList
+                    contentContainerStyle={FLAT_LIST}
+                    data={pets}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                      <View style={LIST_CONTAINER}>
+                          <Text style={LIST_TEXT}>
+                          {item.nome} 
+                          </Text>
+                        <Button
+                          style={BUTTON_SELECT}
+                          disabled={petId===item.id}
+                          onPress={() => {
+                            setPetId(item.id)
+                            
+                          }}
+                          text="Selecionar"
+                          >
+                            
+                          </Button>
+                      
+                      </View>
+                    )}
+                  />
+                  <View>
 
           <Button
             style={BUTTON_ADD}

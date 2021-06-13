@@ -91,6 +91,7 @@ export const PetListScreen = observer(function PetListScreen() {
     }
     return name
   }
+  
 
   return (
     <View testID="PetListScreen" style={FULL}>
@@ -121,7 +122,7 @@ export const PetListScreen = observer(function PetListScreen() {
               <Text style={LIST_TEXT}>
                 {item.nome} {"\n"} {item.especie} {"\n"}
                 {item.idadeEmMeses} meses de idade {"\n"}
-                {getClientePorId(item.clienteId)}
+                
               </Text>
               <Button
                 style={BUTTON_EDIT}

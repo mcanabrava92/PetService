@@ -1,17 +1,27 @@
 import React, { useEffect, useState } from "react"
-import { TextStyle, View, ViewStyle, Text } from "react-native"
+import { TextStyle, View, ViewStyle, Text, FlatList } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { observer } from "mobx-react-lite"
 import { Button, Header, Screen, TextField, Wallpaper } from "../../components"
 import { color, spacing } from "../../theme"
 import { useStores } from "../../models"
-import RadioGroup from 'react-native-radio-buttons-group'
+
 import PetService from "../../services/pet-service"
 import PetModel from "../../models/pet-model"
 import ClienteService from "../../services/cliente-service"
 
 const FULL: ViewStyle = {
   flex: 1,
+}
+const LIST_TEXT: TextStyle = {
+  marginLeft: 10,
+}
+const FLAT_LIST: ViewStyle = {
+  paddingHorizontal: spacing[4],
+}
+const BUTTON_SELECT: ViewStyle = {
+  backgroundColor: "green",
+  alignSelf: "stretch",
 }
 const CONTAINER: ViewStyle = {
   backgroundColor: color.transparent,
@@ -75,27 +85,24 @@ export const PetFormEditScreen = observer(function PetFormEditScreen() {
   
   const { petStore } = useStores()
 
-  const [radioButtonsData, setRadioButtonsData] = useState([]);  
+  //const [radioButtonsData, setRadioButtonsData] = useState([]);  
   const [idadeEmMeses, setSelecionarIdadeEmMeses] = useState(0);
   const [nomeSelecionado, setSelecionarNome] = useState("");
   const [especie, setSelecionarEspecie] = useState("");
   const [imagem, setSelecionarImagem] = useState("");
-  const [clienteRadioGroup, setSelecionarClienteoId] = useState(radioButtonsData);
-  
+  //const [clienteRadioGroup, setSelecionarClienteoId] = useState(radioButtonsData);
+  const [clientes, setClientes] = useState([])
+  const [clienteId, setClienteId] = useState("")
+
+
   async function loadClientes() {
-    const clientes = await clienteService.getClientes()
-    let radioButtonsData = []
-    clientes.forEach((element, index) => {
-      radioButtonsData[index] = {
-        id: `${element.id}`,
-        label: element.nome,
-        value: `${element.id}`,
-        color: "#FFF",
-        labelStyle: {color: "white"}
-      }
-    });
-    setRadioButtonsData(radioButtonsData)
+    setClientes(await clienteService.getClientes())
+    
   }
+
+  useEffect(() => {
+    loadClientes()
+  }, [])
 
   async function loadPetData() {
     const pet = await petService.getPetById(petStore.pet)
@@ -104,12 +111,7 @@ export const PetFormEditScreen = observer(function PetFormEditScreen() {
     setSelecionarIdadeEmMeses(pet.idadeEmMeses)
     setSelecionarImagem(pet.imagem)
 
-    let arrPet =[]
-    clienteRadioGroup.forEach(element => {
-        element.selected=(element.value === pet.clienteId)
-        arrPet.push(element)
-    })
-    setSelecionarClienteoId(arrPet)
+    setClienteId(pet.clienteId)
   }
 
   useEffect(() => {
@@ -119,15 +121,13 @@ export const PetFormEditScreen = observer(function PetFormEditScreen() {
     
 
   async function editarPet() {
-    const clienteSelecionado = clienteRadioGroup.find((item) => {
-      return (item.selected)
-    })
+   
     const pet = new PetModel();
-    pet.nome = nomeSelecionado
-    pet.idadeEmMeses = idadeEmMeses
-    pet.imagem = imagem
-    pet.especie = especie
-    pet.clienteId = clienteSelecionado.value
+    pet.nome = nomeSelecionado,
+    pet.idadeEmMeses = idadeEmMeses,
+    pet.imagem = imagem,
+    pet.especie = especie,
+    pet.clienteId = clienteId,
 
     await petService.updatePet(petStore.pet, pet)
 
@@ -173,10 +173,32 @@ export const PetFormEditScreen = observer(function PetFormEditScreen() {
             style={TEXT_FIELD}
             placeholder="Informe a Url da imagem"/>
           
-          <RadioGroup 
-            radioButtons={clienteRadioGroup} 
-            onPress={setSelecionarClienteoId} 
-          />
+          </View>
+          <FlatList
+                    contentContainerStyle={FLAT_LIST}
+                    data={clientes}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                      <View style={LIST_CONTAINER}>
+                          <Text style={LIST_TEXT}>
+                          {item.nome} 
+                          </Text>
+                        <Button
+                          style={BUTTON_SELECT}
+                          disabled={clienteId===item.id}
+                          onPress={() => {
+                            setClienteId(item.id)
+                            
+                          }}
+                          text="Selecionar"
+                          >
+                            
+                          </Button>
+                      
+                      </View>
+                    )}
+                  />
+                  <View>
           <Button
             style={BUTTON_ADD}
             text="Salvar Alterações"
